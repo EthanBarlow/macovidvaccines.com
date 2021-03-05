@@ -12,27 +12,9 @@ import { makeStyles } from "@material-ui/core";
 import MoreInformation from "./components/MoreInformation";
 import React from "react";
 import SignUpLink from "./components/SignUpLink";
-import { sortData } from "./services/appointmentData.service";
+import { sortData, sortedByMiles } from "./services/appointmentData.service";
 import StaleDataIndicator from "./components/StaleDataIndicator";
 import Typography from "@material-ui/core/Typography";
-
-export function transformData(data) {
-    return data.map((entry, index) => {
-        return {
-            key: index,
-            location: entry.name,
-            streetAddress: entry.street,
-            city: entry.city,
-            zip: entry.zip,
-            hasAppointments: entry.hasAvailability,
-            appointmentData: entry.availability || null,
-            signUpLink: entry.signUpLink || null,
-            extraData: entry.extraData || null,
-            restrictions: entry.restrictions || null,
-            timestamp: entry.timestamp ? new Date(entry.timestamp) : null,
-        };
-    });
-}
 
 const useStyles = makeStyles((theme) => ({
     cardBox: {
@@ -61,10 +43,7 @@ const useStyles = makeStyles((theme) => ({
 export default function CovidAppointmentTable({ data }) {
     const classes = useStyles();
 
-    const sortedData = sortData(data, {
-        sortKey: "location",
-        sortAsc: true,
-    });
+    const sortedData = sortData(data);
 
     // generate unique key for each site
     const getSiteId = (site) => {
@@ -173,7 +152,12 @@ function LocationCard({ entry, className, onlyShowAvailable }) {
                     subheader={
                         <>
                             <RestrictionNotifier entry={entry} />
-                            <div>{entry.city}</div>
+                            <div>
+                                {entry.city}{" "}
+                                {sortedByMiles()
+                                    ? `(${entry.miles} miles)`
+                                    : ""}
+                            </div>
                             <StaleDataIndicator timestamp={entry.timestamp} />
                         </>
                     }

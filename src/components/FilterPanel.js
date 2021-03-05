@@ -7,11 +7,21 @@ import useMediaQuery from "@material-ui/core/useMediaQuery";
 import FormControl from "@material-ui/core/FormControl";
 import FormGroup from "@material-ui/core/FormGroup";
 import Checkbox from "@material-ui/core/Checkbox";
+import Input from "@material-ui/core/Input";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Grid from "@material-ui/core/Grid";
 import Typography from "@material-ui/core/Typography";
 import Container from "@material-ui/core/Container";
 import { hasSignUpLink } from "./SignUpLink";
+import { getDistance } from "geolib";
+import { setSortBy } from "../services/appointmentData.service";
+import Cookies from "universal-cookie";
+
+const cookies = new Cookies();
+const usZips = require("us-zips");
+
+// any location with data older than this will not be displayed at all
+export const tooStaleMinutes = 60; // unit in minutes
 
 const useStyles = makeStyles((theme) => ({
     formControlLabel: {
@@ -58,6 +68,49 @@ function AvailabilityFilter(props) {
         </FormControl>
     );
 }
+
+export function getZipCodeCookie() {
+    const z = cookies.get("ZIPCode");
+    return z ? z : "";
+}
+
+function ZipCodeFilter(props) {
+    const classes = useStyles();
+
+    const handleChange = (e) => {
+        const targetZip = e.target.value;
+        props.setZipCode(targetZip);
+        const zipValid = targetZip === "" || targetZip.match(/\d{5}/);
+        if (zipValid) {
+            cookies.set("ZIPCode", targetZip, { path: "/" });
+        }
+        props.onChange({
+            ...props,
+            [e.target.name]: targetZip,
+        });
+    };
+
+    return (
+        <FormControl component="fieldset" className={classes.formControl}>
+            {/*<FormLabel component="legend"></FormLabel>*/}
+            <FormGroup>
+                <FormControlLabel
+                    control={
+                        <Input
+                            value={props.zipCode}
+                            onChange={handleChange}
+                            name="zipCode"
+                        />
+                    }
+                    label="ZIP Code"
+                    labelPlacement="top"
+                    aria-label="ZIP Code"
+                />
+            </FormGroup>
+        </FormControl>
+    );
+}
+
 /*
 
 function VaxTypeFilter(props) {
@@ -105,6 +158,8 @@ export default function FilterPanel(props) {
         onChange,
         onlyShowAvailable,
         setOnlyShowAvailable,
+        zipCode,
+        setZipCode,
     } = props;
 
     const classes = useStyles();
@@ -115,14 +170,19 @@ export default function FilterPanel(props) {
         onlyShowAvailable: onlyShowAvailable,
         setOnlyShowAvailable: setOnlyShowAvailable,
     });
+    const [zipCodeFilter, setZipcodeFilter] = useState({
+        zipCode: zipCode,
+        setZipCode: setZipCode,
+        miles: 9999,
+        valid: false,
+    });
     /*
     const [vaxTypeFilter, setVaxTypeFilter] = useState({
         types: [],
         include: [],
     });
-*/
 
-    /*   useEffect(() => {
+    useEffect(() => {
         const vaxTypes = Array.from(
             new Set(
                 data.reduce((acc, cur) => {
@@ -157,6 +217,28 @@ export default function FilterPanel(props) {
                 }
                 return true;
             },
+            zipcode: (d) => {
+                if (d) {
+                    const zipValid = zipCodeFilter.zipCode.match(/\d{5}/);
+                    if (zipValid) {
+                        setSortBy("miles");
+                        const myCoordinates = usZips[zipCodeFilter.zipCode];
+                        if (myCoordinates) {
+                            const metersPerMile = 1609.34;
+                            d.miles = Math.round(
+                                getDistance(myCoordinates, d.coordinates, 1) /
+                                    metersPerMile
+                            );
+
+                            // Is the location within the range specified?
+                            return d.miles < zipCodeFilter.miles;
+                        }
+                    } else {
+                        setSortBy("location");
+                    }
+                }
+                return true; // include all for now.
+            },
             /*
             vaxType: (d) => {
                 if (d.extraData && d.extraData["Vaccinations offered"]) {
@@ -177,7 +259,7 @@ export default function FilterPanel(props) {
             },
 */
         });
-    }, [onChange, appointmentFilter]); //,vaxTypeFilter]);
+    }, [onChange, appointmentFilter, zipCodeFilter]); //,vaxTypeFilter]);
 
     return (
         <Grid container={true} className={mdSize ? classes.mdPanel : ""}>
@@ -192,6 +274,15 @@ export default function FilterPanel(props) {
                     onlyShowAvailable={onlyShowAvailable}
                     setOnlyShowAvailable={setOnlyShowAvailable}
                     onChange={setAppointmentFilter}
+                />
+            </Grid>
+
+            <Grid item xs={12}>
+                <ZipCodeFilter
+                    zipCode={zipCode}
+                    setZipCode={setZipCode}
+                    miles={zipCodeFilter.miles}
+                    onChange={setZipcodeFilter}
                 />
             </Grid>
 

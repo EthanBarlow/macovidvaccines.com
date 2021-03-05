@@ -6,7 +6,7 @@ import ArrowBack from "@material-ui/icons/ArrowBack";
 import { Button, makeStyles, MuiThemeProvider } from "@material-ui/core";
 import CovidAppointmentTable from "./CovidAppointmentTable";
 import Drawer from "@material-ui/core/Drawer";
-import FilterPanel from "./components/FilterPanel";
+import FilterPanel, { getZipCodeCookie } from "./components/FilterPanel";
 import {
     filterData,
     getAppointmentData,
@@ -62,6 +62,7 @@ const useStyles = makeStyles((theme) => ({
         },
     },
     drawerMobile: {},
+    mobileButton: { width: "50%" },
     content: {
         flexGrow: 1,
         padding: theme.spacing(3),
@@ -84,6 +85,7 @@ function App() {
     // State variables for the two FilterPanels so that both update together
     const [filters, setFilters] = useState({});
     const [onlyShowAvailable, setOnlyShowAvailable] = useState(true);
+    const [zipCode, setZipCode] = useState(getZipCodeCookie());
 
     useEffect(() => {
         getAppointmentData()
@@ -136,7 +138,17 @@ function App() {
                                     onChange={setFilters}
                                     onlyShowAvailable={onlyShowAvailable}
                                     setOnlyShowAvailable={setOnlyShowAvailable}
-                                />
+                                    zipCode={zipCode}
+                                    setZipCode={setZipCode}
+                                ></FilterPanel>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    className={classes.mobileButton}
+                                    onClick={handleDrawerToggle}
+                                >
+                                    Update List
+                                </Button>
                             </Drawer>
                         </Hidden>
 
@@ -153,6 +165,8 @@ function App() {
                                     onChange={setFilters}
                                     onlyShowAvailable={onlyShowAvailable}
                                     setOnlyShowAvailable={setOnlyShowAvailable}
+                                    zipCode={zipCode}
+                                    setZipCode={setZipCode}
                                 />
                             </Drawer>
                         </Hidden>

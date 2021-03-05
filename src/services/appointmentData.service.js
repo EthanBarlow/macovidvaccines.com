@@ -1,3 +1,6 @@
+let sortKey = "location";
+let sortAsc = true;
+
 const dayjs = require("dayjs");
 
 // any location with data older than this will not be displayed at all
@@ -27,6 +30,10 @@ export function transformData(data) {
             signUpLink: entry.signUpLink || null,
             extraData: entry.extraData || null,
             restrictions: entry.restrictions || null,
+            coordinates: {
+                latitude: entry.latitude,
+                longitude: entry.longitude,
+            },
             timestamp: entry.timestamp ? new Date(entry.timestamp) : null,
         };
     });
@@ -38,7 +45,16 @@ export function transformData(data) {
     });
 }
 
-export function sortData(data, { sortKey, sortAsc }) {
+export function setSortBy(sortBy) {
+    sortKey = sortBy;
+    sortAsc = true;
+}
+
+export function sortedByMiles() {
+    return sortKey === "miles";
+}
+
+export function sortData(data) {
     const newData = data.sort((a, b) => {
         const first = sortAsc ? a[sortKey] : b[sortKey];
         const second = sortAsc ? b[sortKey] : a[sortKey];
